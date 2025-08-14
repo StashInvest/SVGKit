@@ -695,26 +695,30 @@ static NSMutableDictionary* globalSVGKImageCache;
         SVGClipPathElement* clipPathElement = (SVGClipPathElement*) [element.rootOfCurrentDocumentFragment getElementById:_pathId];
         NSAssert( clipPathElement != nil, @"This SVG shape has a URL clip-path (%@), but could not find an XML Node with that ID inside the DOM tree (suggests the parser failed, or the SVG file is corrupt)", _pathId );
         
-        CALayer *clipLayer = [clipPathElement newLayer];
-        for (SVGElement *child in clipPathElement.childNodes )
-        {
-            if ([child conformsToProtocol:@protocol(ConverterSVGToCALayer)]) {
-                
-                CALayer *sublayer = [self newLayerWithElement:(SVGElement<ConverterSVGToCALayer> *)child];
-                
-                if (!sublayer) {
-                    continue;
+        if ([clipPathElement respondsToSelector:@selector(newLayer)]) {
+            CALayer *clipLayer = [clipPathElement newLayer];
+            for (SVGElement *child in clipPathElement.childNodes )
+            {
+                if ([child conformsToProtocol:@protocol(ConverterSVGToCALayer)]) {
+                    
+                    CALayer *sublayer = [self newLayerWithElement:(SVGElement<ConverterSVGToCALayer> *)child];
+                    
+                    if (!sublayer) {
+                        continue;
+                    }
+                    
+                    [clipLayer addSublayer:sublayer];
                 }
-                
-                [clipLayer addSublayer:sublayer];
             }
+            
+            [clipPathElement layoutLayer:clipLayer toMaskLayer:layer];
+            
+            SVGKitLogWarn(@"DOESNT WORK, APPLE's API APPEARS BROKEN???? - About to mask layer frame (%@) with a mask of frame (%@)", NSStringFromCGRect(layer.frame), NSStringFromCGRect(clipLayer.frame));
+            layer.mask = clipLayer;
+            // because it was created with a +1 retain count
+        } else {
+            SVGKitLogWarn(@"This SVG shape has a URL clip-path (%@), but the XML Node that has that ID is empty", _pathId );
         }
-        
-        [clipPathElement layoutLayer:clipLayer toMaskLayer:layer];
-        
-        SVGKitLogWarn(@"DOESNT WORK, APPLE's API APPEARS BROKEN???? - About to mask layer frame (%@) with a mask of frame (%@)", NSStringFromCGRect(layer.frame), NSStringFromCGRect(clipLayer.frame));
-        layer.mask = clipLayer;
-         // because it was created with a +1 retain count
     }
 	
 	/**
