@@ -561,11 +561,16 @@
         SVGKitLogWarn(@"This SVG shape has a URL fill (%@), but could not find an XML Node with that ID inside the DOM tree (suggests the parser failed, or the SVG file is corrupt)", gradId );
     }
 
-	[svgGradient synthesizeProperties];
-	
-	SVGGradientLayer *gradientLayer = [svgGradient newGradientLayerForObjectRect:r
-																	viewportRect:svgElement.rootOfCurrentDocumentFragment.viewBox
-																	   transform:transform];
+    if (![svgGradient respondsToSelector:@selector(synthesizeProperties)]) {
+        SVGKitLogWarn(@"This SVG shape has a URL fill (%@), but the XML Node with ID is empty", gradId );
+        return nil;
+    }
+    
+    [svgGradient synthesizeProperties];
+    
+    SVGGradientLayer *gradientLayer = [svgGradient newGradientLayerForObjectRect:r
+                                                                    viewportRect:svgElement.rootOfCurrentDocumentFragment.viewBox
+                                                                       transform:transform];
 
 	return gradientLayer;
 }
