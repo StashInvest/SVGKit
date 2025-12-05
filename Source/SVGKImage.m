@@ -693,7 +693,9 @@ static NSMutableDictionary* globalSVGKImageCache;
         NSAssert( element.rootOfCurrentDocumentFragment != nil, @"This SVG shape has a URL clip-path type; it needs to search for that URL (%@) inside its nearest-ancestor <SVG> node, but the rootOfCurrentDocumentFragment reference was nil (suggests the parser failed, or the SVG file is corrupt)", _pathId );
         
         SVGClipPathElement* clipPathElement = (SVGClipPathElement*) [element.rootOfCurrentDocumentFragment getElementById:_pathId];
-        NSAssert( clipPathElement != nil, @"This SVG shape has a URL clip-path (%@), but could not find an XML Node with that ID inside the DOM tree (suggests the parser failed, or the SVG file is corrupt)", _pathId );
+		if (clipPathElement == nil) {
+			SVGKitLogWarn(@"This SVG shape has a URL clip-path (%@), but could not find an XML Node with that ID inside the DOM tree (suggests the parser failed, or the SVG file is corrupt)", _pathId);
+		}
         
         if ([clipPathElement respondsToSelector:@selector(newLayer)]) {
             CALayer *clipLayer = [clipPathElement newLayer];
